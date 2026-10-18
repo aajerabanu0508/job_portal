@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: ./Job_Portal_System_Django-React-main/backend
+      dockerfile: Dockerfile
+    container_name: job_portal_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./Job_Portal_System_Django-React-main/backend:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  frontend:
+    build:
+      context: ./Job_Portal_System_Django-React-main/frontend
+      dockerfile: Dockerfile
+    container_name: job_portal_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./Job_Portal_System_Django-React-main/frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend

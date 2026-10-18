@@ -1,0 +1,10 @@
+@"
+.venv/
+venv/
+.env
+__pycache__/
+*.pyc
+node_modules/
+db.sqlite3
+staticfiles/
+"@ | Out-File -Encoding ascii .gitignore
