@@ -1,10 +1,12 @@
-@"
 .venv/
 venv/
 .env
+*.env
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 node_modules/
+dist/
 db.sqlite3
 staticfiles/
-"@ | Out-File -Encoding ascii .gitignore
+.DS_Store

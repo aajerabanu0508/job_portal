@@ -4,10 +4,11 @@ services:
       context: ./Job_Portal_System_Django-React-main/backend
       dockerfile: Dockerfile
     container_name: job_portal_backend
+    restart: unless-stopped
     ports:
       - "8000:8000"
     volumes:
-      - ./Job_Portal_System_Django-React-main/backend:/app
+      - ./Job_Portal_System_Django-React-main/backend/db.sqlite3:/app/db.sqlite3
     environment:
       - PYTHONUNBUFFERED=1
 
@@ -16,10 +17,9 @@ services:
       context: ./Job_Portal_System_Django-React-main/frontend
       dockerfile: Dockerfile
     container_name: job_portal_frontend
+    restart: unless-stopped
     ports:
-      - "5173:5173"
-    volumes:
-      - ./Job_Portal_System_Django-React-main/frontend:/app
-      - /app/node_modules
+      - "80:80"
+      - "5173:80"
     depends_on:
       - backend

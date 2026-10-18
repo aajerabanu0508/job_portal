@@ -52,21 +52,39 @@ jobs:
           script: |
             set -eu
 
-            echo "Installing Docker if required..."
+            echo "Checking Docker and Docker Compose..."
 
             if ! command -v docker >/dev/null 2>&1; then
-              sudo apt-get update
-              sudo apt-get install -y docker.io docker-compose-v2
+              echo "Installing Docker using official installer..."
+              curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+              sudo sh /tmp/get-docker.sh
+              rm -f /tmp/get-docker.sh
             fi
 
             sudo systemctl enable --now docker
 
             if ! sudo docker compose version >/dev/null 2>&1; then
-              sudo apt-get update
-              sudo apt-get install -y docker-compose-v2
+              echo "Installing Docker Compose CLI plugin..."
+              sudo mkdir -p /usr/local/lib/docker/cli-plugins
+              COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' || echo "v2.29.7")
+              COMPOSE_VERSION=${COMPOSE_VERSION:-v2.29.7}
+              ARCH=$(uname -m)
+              case $ARCH in
+                x86_64) COMPOSE_ARCH="x86_64" ;;
+                aarch64|arm64) COMPOSE_ARCH="aarch64" ;;
+                *) COMPOSE_ARCH="x86_64" ;;
+              esac
+              sudo curl -sSL "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-linux-${COMPOSE_ARCH}" -o /usr/local/lib/docker/cli-plugins/docker-compose
+              sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
             fi
 
             cd /home/ubuntu/job_portal
+
+            # Ensure backend .env exists
+            if [ ! -f "Job_Portal_System_Django-React-main/backend/.env" ] && [ -f "Job_Portal_System_Django-React-main/backend/.env.example" ]; then
+              echo "Generating initial backend/.env from .env.example..."
+              cp Job_Portal_System_Django-React-main/backend/.env.example Job_Portal_System_Django-React-main/backend/.env
+            fi
 
             echo "Validating Docker Compose..."
             sudo docker compose -f docker-compose.yml config -q

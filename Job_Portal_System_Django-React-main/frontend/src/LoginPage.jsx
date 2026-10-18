@@ -2,11 +2,12 @@ import React from 'react'
 import { useActionState } from 'react'
 import { NavLink } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import { API_ENDPOINTS } from './api';
 
 
 async function loginAction(_,formData) {
     const json = Object.fromEntries(formData);
-    const res =  await fetch("http://127.0.0.1:8000/login/", {
+    const res =  await fetch(API_ENDPOINTS.LOGIN, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

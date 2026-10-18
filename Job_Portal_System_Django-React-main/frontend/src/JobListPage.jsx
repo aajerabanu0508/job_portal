@@ -1,6 +1,7 @@
 import React from 'react'
 import { useEffect,useState } from 'react'
 import { NavLink } from 'react-router-dom';
+import { API_ENDPOINTS } from './api';
 
 export default function JobListPage() {
     const [jobs, setJobs] = useState([]);
@@ -10,7 +11,7 @@ export default function JobListPage() {
     useEffect(() => {
         const fetchJobs = async () => {
             try {
-                const response = await fetch('http://localhost:8000/jobs/');
+                const response = await fetch(API_ENDPOINTS.JOBS);
                 const data = await response.json();
                 setJobs(data);
             } catch (error) {
