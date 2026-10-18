@@ -1,3 +1,4 @@
+
 name: Deploy Job Portal to EC2
 
 on:
@@ -15,7 +16,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Deploy with Docker Compose
+    name: Deploy to Amazon Linux EC2
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -25,10 +26,9 @@ jobs:
 
       - name: Verify deployment files
         run: |
-          test -f docker-compose.yml || {
-            echo "docker-compose.yml not found at repository root"
-            exit 1
-          }
+          test -f docker-compose.yml
+          test -d Job_Portal_System_Django-React-main/backend
+          test -d Job_Portal_System_Django-React-main/frontend
 
       - name: Copy project to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -37,7 +37,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "docker-compose.yml,Job_Portal_System_Django-React-main"
-          target: "/home/ubuntu/job_portal"
+          target: "/home/ec2-user/job_portal"
           overwrite: true
           command_timeout: 10m
           exclude: "**/node_modules/**,**/.venv/**,**/venv/**,**/__pycache__/**,**/.git/**"
@@ -52,44 +52,49 @@ jobs:
           script: |
             set -eu
 
-            echo "Checking Docker and Docker Compose..."
+            cd /home/ec2-user/job_portal
 
             if ! command -v docker >/dev/null 2>&1; then
-              echo "Installing Docker using official installer..."
-              curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
-              sudo sh /tmp/get-docker.sh
-              rm -f /tmp/get-docker.sh
+              sudo dnf install -y docker
             fi
 
             sudo systemctl enable --now docker
 
             if ! sudo docker compose version >/dev/null 2>&1; then
-              echo "Installing Docker Compose CLI plugin..."
               sudo mkdir -p /usr/local/lib/docker/cli-plugins
-              COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' || echo "v2.29.7")
-              COMPOSE_VERSION=${COMPOSE_VERSION:-v2.29.7}
+
+              VERSION=$(curl -fsSL \
+                https://api.github.com/repos/docker/compose/releases/latest \
+                | grep '"tag_name":' \
+                | head -1 \
+                | sed -E 's/.*"([^"]+)".*/\1/')
+
               ARCH=$(uname -m)
-              case $ARCH in
+              case "$ARCH" in
                 x86_64) COMPOSE_ARCH="x86_64" ;;
-                aarch64|arm64) COMPOSE_ARCH="aarch64" ;;
-                *) COMPOSE_ARCH="x86_64" ;;
+                aarch64) COMPOSE_ARCH="aarch64" ;;
+                *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
               esac
-              sudo curl -sSL "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-linux-${COMPOSE_ARCH}" -o /usr/local/lib/docker/cli-plugins/docker-compose
-              sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+              sudo curl -fsSL \
+                "https://github.com/docker/compose/releases/download/${VERSION}/docker-compose-linux-${COMPOSE_ARCH}" \
+                -o /usr/local/lib/docker/cli-plugins/docker-compose
+
+              sudo chmod +x \
+                /usr/local/lib/docker/cli-plugins/docker-compose
             fi
 
-            cd /home/ubuntu/job_portal
+            APP_DIR="Job_Portal_System_Django-React-main"
 
-            # Ensure backend .env exists
-            if [ ! -f "Job_Portal_System_Django-React-main/backend/.env" ] && [ -f "Job_Portal_System_Django-React-main/backend/.env.example" ]; then
-              echo "Generating initial backend/.env from .env.example..."
-              cp Job_Portal_System_Django-React-main/backend/.env.example Job_Portal_System_Django-React-main/backend/.env
+            if [ ! -f "$APP_DIR/backend/.env" ] && \
+               [ -f "$APP_DIR/backend/.env.example" ]; then
+              cp "$APP_DIR/backend/.env.example" "$APP_DIR/backend/.env"
             fi
 
             echo "Validating Docker Compose..."
             sudo docker compose -f docker-compose.yml config -q
 
-            echo "Building backend and frontend..."
+            echo "Building application..."
             sudo docker compose -f docker-compose.yml build
 
             echo "Starting application..."
@@ -98,7 +103,7 @@ jobs:
             echo "Container status:"
             sudo docker compose -f docker-compose.yml ps
 
-            echo "Recent logs:"
+            echo "Recent application logs:"
             sudo docker compose -f docker-compose.yml logs --tail=50
 
-            echo "Deployment finished."
+            echo "Deployment completed."
