@@ -1,36 +1,18 @@
+import { Routes, Route } from "react-router-dom";
+import LandingPage from "./LandingPage";
+import JobListPage from "./JobListPage";
+import LoginPage from "./LoginPage";
+import RegisterPage from "./RegisterPage";
+import ApplyJobPage from "./ApplyJobPage";
 
-import { useState } from 'react'
-import './App.css'
-import RegisterPage from './RegisterPage.jsx'
-import LoginPage from './LoginPage.jsx'
-import JobListPage from './JobListPage.jsx'
-import ApplyJobPage from './ApplyJobPage.jsx'
-import { BrowserRouter, Route, Routes,Navigate } from 'react-router-dom'
-
-function App() {
-
+export default function App() {
   return (
-
-    // <>
-    //   {/* <RegisterPage /> */}
-    //   {/* <LoginPage /> */}
-    //   {/* <JobListPage /> */}
-    //   {/* <ApplyJobPage /> */}
-      
-
-    // </>
-    <BrowserRouter>
-      <Routes>
-        {/* OPEN REGISTER PAGE DIRECTLY */}
-        <Route path="/" element={<Navigate to="/register" replace />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/jobs" element={<JobListPage />} />
-        <Route path="/apply/:jobId" element={<ApplyJobPage />} />
-      </Routes>
-    </BrowserRouter>
-
-  )
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/jobs" element={<JobListPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/apply/:jobId" element={<ApplyJobPage />} />
+    </Routes>
+  );
 }
-
-export default App
